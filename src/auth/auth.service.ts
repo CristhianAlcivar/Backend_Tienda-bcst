@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import { isValidObjectId, Model } from 'mongoose';
@@ -40,16 +40,21 @@ export class AuthService {
     return await this.UserModel.find().exec();
   }
 
-  async findOne(id: string) {
+  async findOne(term: string) {
     let user: User;
 
-    if( !user && isValidObjectId( id ) ){
-      user = await this.UserModel.findById( id );
+    if( !isNaN(+term) ){
+      user = await this.UserModel.findOne({ no:term });
+    }
+    if( !user && isValidObjectId( term ) ){
+      user = await this.UserModel.findById( term );
     }
  
     if( !user ){
-      user = await this.UserModel.findOne({ name:id.toLowerCase().trim() });
+      user = await this.UserModel.findOne({ name:term.toLowerCase().trim() });
     }
+
+    if( !user ) throw new NotFoundException(`User with id, name or no "${ term }" not found`);
     return user;
   }
 
